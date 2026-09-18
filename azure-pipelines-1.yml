@@ -1,0 +1,47 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: build 
+    displayName: 'node.js CI'
+
+jobs:
+  - job: buildjob
+    displayName: 'build node application'
+
+    steps:
+    - checkout: self 
+      displayName: 'cloning and checkout the code'
+
+    - task: Usenode@1
+      displayName: 'install node.js'
+      inputs:
+        version: '20.x'
+
+    - script: |
+      node: --version
+      npm: --version
+      displayName: 'check node and npm'
+
+    - script: |
+        npm ci
+        displayName: 'install dependencies'
+
+    - script: |
+        npm test
+        displayName: 'run test'
+
+    - script: |
+        npm start &
+        sleep 5
+        curl -I http://localhost:3000/health
+        displayName: 'start and health check'
+        
+
+
+
+
+
