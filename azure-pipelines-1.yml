@@ -22,8 +22,8 @@ stages:
         version: '20.x'
 
     - script: |
-        node: --version
-        npm: --version
+        node --version
+        npm --version
       displayName: 'check node and npm'
 
     - script: |
