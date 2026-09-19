@@ -19,7 +19,7 @@ stages:
     - task: Usenode@1
       displayName: 'install node.js'
       inputs:
-        version: '20.x'
+        version: '24.x'
 
     - script: |
         node --version
@@ -56,7 +56,32 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)/node-app.zip'
         artifact: 'node-app'    
 
+# =========================
+# CD
+# =========================
+- stage: Deploy
+  displayName: 'Deploy to Azure App Service'
 
+  dependsOn: Build
+  condition: succeeded()
 
+  jobs:
+  - job: DeployToAzure
+    displayName: 'Deploy Node.js Application'
 
+    steps:
 
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Artifact'
+      inputs:
+        buildType: 'current'
+        artifactName: 'node-app'
+        targetPath: '$(Pipeline.Workspace)/node-app'
+
+    - task: AzureWebApp@1
+      displayName: 'Deploy to Azure App Service'
+      inputs:
+        azureSubscription: 'azure-node-cicd-connection'
+        appType: 'webAppLinux'
+        appName: 'node-cicd-demo'
+        package: '$(Pipeline.Workspace)/node-app/node-app.zip'
