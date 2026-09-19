@@ -39,7 +39,22 @@ stages:
         sleep 5
         curl -I http://localhost:3000/health
       displayName: 'start and health check'
-        
+
+    
+    - task: ArchiveFiles@2
+      displayName: 'Create Application Package'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/node-app.zip'
+        replaceExistingArchive: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/node-app.zip'
+        artifact: 'node-app'    
 
 
 
