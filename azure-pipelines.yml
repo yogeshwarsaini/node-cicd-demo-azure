@@ -4,65 +4,74 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-  - task: NodeTool@0
-    displayName: 'Install Node.js'
-    inputs:
-      versionSpec: '24.x'
+stages:
 
-  - script: npm ci
-    displayName: 'Install dependencies'
+- stage: Build
+  displayName: 'Build and Test'
 
-  - script: npm test
-    displayName: 'Run test'
+  jobs:
+  - job: Build
+    steps:
 
-  - script: |
-      npm run build
-      echo "=== Current directory ==="
-      pwd
-      echo "=== Files ==="
-      ls -la
-      echo "=== dist ==="
-      ls -la dist
-    displayName: 'Build application'
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: '24.x'
 
-  - task: ArchiveFiles@2
-    displayName: 'Create Artifact'
-    inputs:
-      rootFolderOrFile: 'dist'
-      includeRootFolder: false
-      archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
-      replaceExistingArchive: true
+    - script: npm ci
+      displayName: 'Install dependencies'
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish artifact'
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
-      ArtifactName: 'node-cicd'
+    - script: npm test
+      displayName: 'Run test'
 
-  - stage: Deploy_Staging
+    - script: |
+        npm run build
+        echo "=== Current directory ==="
+        pwd
+        echo "=== Files ==="
+        ls -la
+        echo "=== dist ==="
+        ls -la dist
+      displayName: 'Build application'
+
+    - task: ArchiveFiles@2
+      displayName: 'Create Artifact'
+      inputs:
+        rootFolderOrFile: 'dist'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
+        replaceExistingArchive: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
+        ArtifactName: 'node-cicd'
+
+
+- stage: Deploy_Staging
+  displayName: 'Deploy to Staging'
+  dependsOn: Build
+  condition: succeeded()
+
+  jobs:
+  - deployment: Staging
     displayName: 'Deploy to Staging'
-    dependsOn: Build
-    condition: succeeded()
+    environment: staging
 
-    jobs:
-    - deployment: Staging
-      displayName: 'Deploy to Staging'
-      environment: staging
+    strategy:
+      runOnce:
+        deploy:
+          steps:
 
-      strategy:
-        runOnce:
-          deploy:
-            steps:
+          - download: current
+            artifact: node-cicd
 
-            - download: current
-              artifact: node-cicd
-
-            - task: AzureWebApp@1
-              displayName: 'Deploy to Staging App Service'
-              inputs:
-                azureSubscription: 'azure-devops-connection'
-                appType: 'webAppLinux'
-                appName: 'YOUR-STAGING-APP-NAME'
-                package: '$(Pipeline.Workspace)/node-cicd/node-cicd.zip'
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Staging App Service'
+            inputs:
+              azureSubscription: 'azure-devops-connection'
+              appType: 'webAppLinux'
+              appName: 'YOUR-STAGING-APP-NAME'
+              package: '$(Pipeline.Workspace)/node-cicd/node-cicd.zip'
