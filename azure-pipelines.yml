@@ -1,0 +1,37 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: NodeTool@0
+    displayName: 'install node.js'
+    inputs:
+      versionSpec: '24.x'
+
+  - script: npm ci
+    displayName: 'install dependencies'
+  
+  - script: npm test
+    displayName: 'run test'
+
+  - script: npm run build
+    displayName: 'build application'
+
+  - task: ArchiveFiles@1
+    displayName: 'create Artifact'
+    inputs:
+      rootFolderOrFile: 'dist'
+      includeRootFolder: false
+      archiveType:  'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
+      replaceExistingArchive: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish artifact'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
+      ArtifactName: 'node-cicd'
+
+
