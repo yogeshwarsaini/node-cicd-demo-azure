@@ -40,3 +40,29 @@ steps:
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)/node-cicd.zip'
       ArtifactName: 'node-cicd'
+
+  - stage: Deploy_Staging
+    displayName: 'Deploy to Staging'
+    dependsOn: Build
+    condition: succeeded()
+
+    jobs:
+    - deployment: Staging
+      displayName: 'Deploy to Staging'
+      environment: staging
+
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+
+            - download: current
+              artifact: node-cicd
+
+            - task: AzureWebApp@1
+              displayName: 'Deploy to Staging App Service'
+              inputs:
+                azureSubscription: 'azure-devops-connection'
+                appType: 'webAppLinux'
+                appName: 'YOUR-STAGING-APP-NAME'
+                package: '$(Pipeline.Workspace)/node-cicd/node-cicd.zip'
