@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
-    "build": "mkdir -p dist && cp server.js dist/"
+    "build": "mkdir -p dist && cp server.js package.json package-lock.json dist/"
   },
   "keywords": [],
   "author": "",
