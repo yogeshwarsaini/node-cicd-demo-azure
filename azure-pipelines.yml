@@ -76,3 +76,29 @@ stages:
               appName: 'yogesh-devops-staging'
               package: '$(Pipeline.Workspace)/node-cicd/node-cicd.zip'
 
+
+- stage: Deploy_Production
+  displayName: 'Deploy to Production'
+  dependsOn: Deploy_Staging
+  condition: succeeded()
+
+  jobs:
+  - deployment: Production
+    displayName: 'Deploy to Production'
+    environment: production
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - download: current
+            artifact: node-cicd
+
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Production App Service'
+            inputs:
+              azureSubscription: 'azure-devops-connection'
+              appType: 'webAppLinux'
+              appName: 'yogesh-devops-prod'
+              package: '$(Pipeline.Workspace)/node-cicd/node-cicd.zip'
